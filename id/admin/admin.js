@@ -1,5 +1,5 @@
 // Memanggil supabase dari folder config
-import { supabase } from '../config/supabase.js';
+import { supabase } from '/config/supabase.js';
 
 const ADMIN_PASSWORD = "admin123"; // Ganti password admin kamu di sini
 const WASENDER_API_KEY = 'wsm_BBKO2OYAwKC2hrxDgYlR3EXKMWeQ3ukYDMjUiQ02FlNgNyFQ'; // Ganti API key kamu (dari app.wasender.dev)
