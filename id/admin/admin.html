@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Rama Store</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="/id/admin/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- LOGIN SCREEN ADMIN -->
+        <div id="adminLoginScreen" class="card" style="max-width: 400px; margin: 60px auto;">
+            <div style="font-size: 40px; text-align: center; margin-bottom: 10px;">🔐</div>
+            <h2 style="text-align: center; font-size: 20px; margin-bottom: 15px;">Login - Admin</h2>
+            <form id="formAdminLogin">
+                <div class="form-group">
+                    <label>Nomor WhatsApp Admin</label>
+                    <input type="text" id="adminWa" placeholder="Nomor WA admin" required>
+                </div>
+                <div class="form-group">
+                    <label>Password Admin</label>
+                    <input type="password" id="adminPass" placeholder="Masukkan Password Admin" required>
+                </div>
+                <button type="submit" class="btn-primary">Masuk Panel Admin &rarr;</button>
+            </form>
+        </div>
+
+        <!-- MAIN DASHBOARD ADMIN -->
+        <div id="adminDashboard" style="display: none;">
+            <div class="header-admin">
+                <div>
+                    <h2 style="font-size: 18px; color: #38bdf8;"><i class="fa-solid fa-store"></i> Panel Kontrol Toko</h2>
+                    <p style="font-size: 11px; color: #94a3b8;">Kelola Produk, Pesanan, Info, Galeri & Notifikasi</p>
+                </div>
+                <button id="btnAdminLogout" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            </div>
+
+            <!-- TABS MENU -->
+            <div class="admin-nav">
+                <button class="nav-btn active" onclick="switchAdminTab('Pesanan', this)"><i class="fa-solid fa-receipt"></i> Pesanan Masuk</button>
+                <button class="nav-btn" onclick="switchAdminTab('SellerReq', this)"><i class="fa-solid fa-user-check"></i> Permintaan Seller</button>
+                <button class="nav-btn" onclick="switchAdminTab('Produk', this)"><i class="fa-solid fa-boxes-stacked"></i> Moderasi Produk</button>
+                <button class="nav-btn" onclick="switchAdminTab('InfoToko', this)"><i class="fa-solid fa-bullhorn"></i> Info & Promo</button>
+                <button class="nav-btn" onclick="switchAdminTab('Galeri', this)"><i class="fa-solid fa-images"></i> Galeri / Testimoni</button>
+                <button class="nav-btn" onclick="switchAdminTab('Notif', this)"><i class="fa-solid fa-bell"></i> Notif Pengunjung</button>
+            </div>
+
+            <!-- TAB 1: PESANAN MASUK -->
+            <div id="tabPesanan" class="tab-content active">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <h3 style="font-size: 15px; color: #38bdf8; margin: 0;"><i class="fa-solid fa-clock-rotate-left"></i> Daftar Pesanan</h3>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <label style="font-size: 13px; color: #94a3b8; font-weight: 500;">Filter Tanggal:</label>
+                            <input type="date" id="filterPesananAdmin" onchange="loadPesananData()" style="padding: 10px 14px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; font-size: 13px; outline: none; cursor: pointer;">
+                        </div>
+                        <button id="btnCetakExcel" class="btn-primary" style="width: auto; padding: 10px 18px; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);" onclick="cetakLaporanExcel()">
+                            <i class="fa-solid fa-file-excel"></i> Cetak Excel & Kirim WA
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Pembeli</th>
+                                    <th>Seller</th>
+                                    <th>No WA</th>
+                                    <th>Item</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listPesananTable">
+                                <tr><td colspan="7" style="text-align: center; color: #94a3b8;">Memuat data pesanan...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PERMINTAAN SELLER -->
+            <div id="tabSellerReq" class="tab-content">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-user-clock"></i> Menunggu Persetujuan</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Nama</th><th>No WA</th><th>Tanggal Daftar</th><th>Aksi</th></tr></thead>
+                            <tbody id="listSellerReqTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-store"></i> Seller Aktif</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Nama</th><th>No WA</th><th>Verified</th><th>Aksi</th></tr></thead>
+                            <tbody id="listSellerAktifTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: MODERASI PRODUK -->
+            <div id="tabProduk" class="tab-content">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-boxes-stacked"></i> Semua Produk (dikelola seller masing-masing)</h3>
+                    <p style="font-size: 11px; color: #94a3b8; margin-bottom: 12px;">Produk ditambahkan sendiri oleh seller lewat akun mereka. Di sini admin cuma bisa moderasi (nonaktifkan/hapus) kalau ada yang melanggar.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr><th>Produk</th><th>Seller</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr>
+                            </thead>
+                            <tbody id="listProdukTable">
+                                <tr><td colspan="7" style="text-align: center; color: #94a3b8;">Memuat data produk...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: INFO & PROMO -->
+            <div id="tabInfoToko" class="tab-content">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-bullhorn"></i> Tambah Info / Promo</h3>
+                    <form id="formTambahInfo">
+                        <div class="form-group">
+                            <label>Judul</label>
+                            <input type="text" id="addInfoJudul" placeholder="Contoh: Flash Sale Akhir Bulan" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Isi Informasi</label>
+                            <textarea id="addInfoIsi" placeholder="Tulis rincian info/promo di sini..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">+ Publikasikan</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-list"></i> Info Aktif</h3>
+                    <div id="adminInfoList">
+                        <p style="font-size: 12px; color: #94a3b8;">Memuat informasi...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: GALERI / TESTIMONI -->
+            <div id="tabGaleri" class="tab-content">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-image"></i> Tambah Foto Galeri / Testimoni</h3>
+                    <form id="formTambahGaleri">
+                        <div class="form-group">
+                            <label>Judul</label>
+                            <input type="text" id="addGalJudul" placeholder="Contoh: Testimoni Pembeli / Bukti Transaksi" required>
+                        </div>
+                        <div class="form-group">
+                            <label>URL Foto</label>
+                            <input type="url" id="addGalFotoUrl" placeholder="https://..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi (Opsional)</label>
+                            <textarea id="addGalDeskripsi" placeholder="Keterangan singkat..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">+ Upload Foto</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-photo-film"></i> Galeri Terdaftar</h3>
+                    <div id="adminGaleriGrid" class="admin-memory-grid">
+                        <p style="font-size: 12px; color: #94a3b8;">Memuat galeri...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: NOTIF PENGUNJUNG -->
+            <div id="tabNotif" class="tab-content">
+                <div class="card">
+                    <h3 style="font-size: 15px; margin-bottom: 15px; color: #38bdf8;"><i class="fa-solid fa-bell"></i> Kirim Notifikasi Realtime ke Pengunjung</h3>
+                    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 15px;">Pesan yang dikirim dari sini akan langsung muncul sebagai pop-up di layar pengunjung yang sedang membuka toko.</p>
+                    <form id="formKirimNotif">
+                        <div class="form-group">
+                            <label>Judul Notifikasi</label>
+                            <input type="text" id="notifAdminJudul" placeholder="Contoh: Promo Kilat / Info Penting" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Isi Pesan</label>
+                            <textarea id="notifAdminPesan" placeholder="Tulis isi pesan notifikasi..." required></textarea>
+                        </div>
+                        <button type="submit" id="btnBroadcast" class="btn-primary">
+                            <i class="fa-solid fa-paper-plane"></i> Kirim Notifikasi Sekarang
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/id/admin/admin.js"></script>
+</body>
+</html>
