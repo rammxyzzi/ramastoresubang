@@ -1,5 +1,5 @@
 // Memanggil supabase dari folder config
-mport { supabase } from '/config/supabase.js';
+import { supabase } from '/config/supabase.js';
 
 // ================= KONFIGURASI TOKO =================
 const NAMA_TOKO = "Rama Store";
