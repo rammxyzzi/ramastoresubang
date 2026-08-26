@@ -110,6 +110,8 @@ function masukKeApp() {
     loadGaleri();
     renderCart();
     loadPesananSaya();
+    loadStats();
+    loadDaftarChat();
     dengarkanNotifRealtime();
 }
 
@@ -133,9 +135,20 @@ window.switchSellerTab = function (tabName, el) {
 
 // ================= PROFIL & AKUN =================
 function renderProfile() {
-    document.getElementById('avatarInitial').innerText = (sesiUser.nama || '?').charAt(0).toUpperCase();
+    const avatarInitial = document.getElementById('avatarInitial');
+    const avatarImg = document.getElementById('avatarImg');
+    if (sesiUser.avatar_url) {
+        avatarImg.src = sesiUser.avatar_url;
+        avatarImg.style.display = 'block';
+        avatarInitial.style.display = 'none';
+    } else {
+        avatarInitial.innerText = (sesiUser.nama || '?').charAt(0).toUpperCase();
+        avatarInitial.style.display = 'flex';
+        avatarImg.style.display = 'none';
+    }
     document.getElementById('profileNama').childNodes[0].nodeValue = sesiUser.nama + ' ';
     document.getElementById('profileWa').innerText = sesiUser.no_wa;
+    document.getElementById('profileBio').value = sesiUser.bio || '';
     document.getElementById('verifiedIcon').style.display = sesiUser.seller_verified ? 'inline-block' : 'none';
 
     const badge = document.getElementById('profileRoleBadge');
@@ -176,6 +189,62 @@ window.ajukanSeller = async function () {
     renderProfile();
 };
 
+// ================= UPLOAD FOTO PROFIL & BIO =================
+document.getElementById('avatarFileInput')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    Swal.fire({ title: 'Mengunggah foto...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const ext = file.name.split('.').pop();
+    const path = `user-${sesiUser.id}-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    if (uploadError) {
+        Swal.fire({ icon: 'error', title: 'Gagal Upload', text: uploadError.message });
+        return;
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+    const avatar_url = urlData.publicUrl;
+
+    const { error: updateError } = await supabase.from('users').update({ avatar_url }).eq('id', sesiUser.id);
+    if (updateError) {
+        Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: updateError.message });
+        return;
+    }
+
+    sesiUser.avatar_url = avatar_url;
+    localStorage.setItem('sesiUser', JSON.stringify(sesiUser));
+    renderProfile();
+    Swal.fire({ icon: 'success', title: 'Foto Profil Diperbarui', timer: 1000, showConfirmButton: false });
+});
+
+window.simpanBio = async function () {
+    const bio = document.getElementById('profileBio').value.trim();
+    const { error } = await supabase.from('users').update({ bio }).eq('id', sesiUser.id);
+    if (error) {
+        Swal.fire({ icon: 'error', title: 'Gagal', text: error.message });
+        return;
+    }
+    sesiUser.bio = bio;
+    localStorage.setItem('sesiUser', JSON.stringify(sesiUser));
+    Swal.fire({ icon: 'success', title: 'Bio Disimpan', timer: 900, showConfirmButton: false });
+};
+
+// ================= STATS DASHBOARD =================
+async function loadStats() {
+    const { count: akunTersedia } = await supabase.from('produk').select('*', { count: 'exact', head: true }).eq('aktif', true).gt('stok', 0);
+    const { count: totalUser } = await supabase.from('users').select('*', { count: 'exact', head: true });
+    const { data: pesananSelesai } = await supabase.from('pesanan').select('items').eq('status', 'Selesai');
+
+    const akunTerjual = (pesananSelesai || []).reduce((sum, p) => sum + (p.items || []).reduce((s, i) => s + i.qty, 0), 0);
+
+    document.getElementById('statAkunTersedia').innerText = akunTersedia || 0;
+    document.getElementById('statAkunTerjual').innerText = akunTerjual;
+    document.getElementById('statTotalUser').innerText = totalUser || 0;
+}
+
 // ================= 1. KATALOG PRODUK =================
 async function loadProduk() {
     const { data, error } = await supabase
@@ -193,8 +262,31 @@ async function loadProduk() {
 
     await loadRatingSummary();
     renderKategoriChips();
+    renderGameGrid();
     renderProduk();
 }
+
+function renderGameGrid() {
+    const grid = document.getElementById('gameGrid');
+    const kategoriSaja = daftarKategori.filter(k => k !== 'Semua');
+    if (kategoriSaja.length === 0) {
+        grid.innerHTML = `<p style="grid-column:1/-1; font-size:11px; color:#64748b;">Belum ada kategori produk.</p>`;
+        return;
+    }
+    grid.innerHTML = kategoriSaja.map(cat => `
+        <div class="game-tile" onclick="pilihKategoriDariGrid('${cat.replace(/'/g, "\\'")}')">
+            <div class="icon">${cat.charAt(0).toUpperCase()}</div>
+            <div class="lbl">${cat}</div>
+        </div>
+    `).join('');
+}
+
+window.pilihKategoriDariGrid = function (cat) {
+    kategoriAktif = cat;
+    renderKategoriChips();
+    renderProduk();
+    document.getElementById('categoryScroll').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
 async function loadRatingSummary() {
     const { data } = await supabase.from('rating_seller').select('seller_id, rating');
@@ -294,10 +386,11 @@ window.bukaDetail = async function (produkId) {
         <div class="product-price" style="margin: 10px 0;">${formatRupiah(p.harga)}</div>
         <p style="font-size: 12.5px; color: #cbd5e1; margin-bottom: 14px;">${p.deskripsi || 'Tidak ada deskripsi.'}</p>
 
-        <div class="product-actions" style="margin-bottom: 18px;">
+        <div class="product-actions" style="margin-bottom: 12px;">
             <button class="btn-add-cart" ${p.stok <= 0 ? 'disabled' : ''} onclick="tambahKeranjang(${p.id})" style="padding:12px;"><i class="fa-solid fa-cart-plus"></i> Keranjang</button>
             <button class="btn-buy-now" ${p.stok <= 0 ? 'disabled' : ''} onclick="beliSekarang(${p.id})" style="padding:12px;">Beli Sekarang</button>
         </div>
+        ${sesiUser.id !== p.seller_id ? `<button class="btn-outline" style="margin-bottom: 18px;" onclick="mulaiChatDenganSeller(${p.seller_id}, '${namaSeller.replace(/'/g, "\\'")}')"><i class="fa-solid fa-comments"></i> Chat Seller</button>` : ''}
 
         <h4 style="font-size: 13px; color: #38bdf8; margin-bottom: 8px;"><i class="fa-solid fa-comments"></i> Tanya Seller</h4>
         <div class="comment-thread" id="commentThread">
@@ -775,7 +868,143 @@ formCsChat?.addEventListener('submit', (e) => {
     }, 500);
 });
 
-// ================= 11. NOTIFIKASI PROMO REALTIME =================
+// ================= 12. CHAT ANTAR USER =================
+let chatLawanBicara = null; // {id, nama, avatar_url, seller_verified}
+let chatRealtimeChannel = null;
+
+async function loadDaftarChat() {
+    const wrap = document.getElementById('daftarChatList');
+    const { data: pesanList } = await supabase
+        .from('pesan_chat')
+        .select('*')
+        .or(`dari_id.eq.${sesiUser.id},ke_id.eq.${sesiUser.id}`)
+        .order('created_at', { ascending: false });
+
+    if (!pesanList || pesanList.length === 0) {
+        wrap.innerHTML = `<p style="font-size:12px; color:#64748b; text-align:center; padding:12px;">Belum ada percakapan.</p>`;
+        return;
+    }
+
+    // Ambil lawan bicara unik + pesan terakhir masing-masing
+    const percakapan = {};
+    pesanList.forEach(p => {
+        const lawanId = p.dari_id === sesiUser.id ? p.ke_id : p.dari_id;
+        if (!percakapan[lawanId]) percakapan[lawanId] = p;
+    });
+
+    const lawanIds = Object.keys(percakapan);
+    const { data: usersData } = await supabase.from('users').select('id, nama, avatar_url, seller_verified').in('id', lawanIds);
+    const usersMap = {};
+    (usersData || []).forEach(u => { usersMap[u.id] = u; });
+
+    wrap.innerHTML = Object.entries(percakapan).map(([lawanId, pesanTerakhir]) => {
+        const u = usersMap[lawanId];
+        if (!u) return '';
+        const belumDibaca = pesanTerakhir.ke_id === sesiUser.id && !pesanTerakhir.dibaca;
+        return `
+        <div class="chat-list-item" onclick='bukaThreadChat(${JSON.stringify({ id: u.id, nama: u.nama, avatar_url: u.avatar_url, seller_verified: u.seller_verified })})'>
+            ${u.avatar_url ? `<img src="${u.avatar_url}">` : `<div class="avatar-fallback">${u.nama.charAt(0).toUpperCase()}</div>`}
+            <div class="chat-list-info">
+                <div class="nm">${u.nama} ${u.seller_verified ? '<i class="fa-solid fa-circle-check verified-badge"></i>' : ''}</div>
+                <div class="last-msg">${pesanTerakhir.pesan}</div>
+            </div>
+            ${belumDibaca ? '<div class="chat-unread-dot"></div>' : ''}
+        </div>`;
+    }).join('');
+}
+
+window.cariUserUntukChat = async function () {
+    const keyword = document.getElementById('cariUserChat').value.trim();
+    const hasil = document.getElementById('hasilCariUser');
+    if (!keyword) { hasil.innerHTML = ''; return; }
+
+    const { data } = await supabase.from('users').select('id, nama, avatar_url, seller_verified').ilike('nama', `%${keyword}%`).neq('id', sesiUser.id).limit(8);
+
+    if (!data || data.length === 0) {
+        hasil.innerHTML = `<p style="font-size:11px; color:#64748b; padding:8px;">User tidak ditemukan.</p>`;
+        return;
+    }
+
+    hasil.innerHTML = data.map(u => `
+        <div class="user-search-result" onclick='bukaThreadChat(${JSON.stringify({ id: u.id, nama: u.nama, avatar_url: u.avatar_url, seller_verified: u.seller_verified })})'>
+            ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">` : `<div class="avatar-fallback" style="width:36px;height:36px;">${u.nama.charAt(0).toUpperCase()}</div>`}
+            <div style="font-size:12.5px; font-weight:600;">${u.nama} ${u.seller_verified ? '<i class="fa-solid fa-circle-check verified-badge"></i>' : ''}</div>
+        </div>
+    `).join('');
+};
+
+window.mulaiChatDenganSeller = function (sellerId, sellerNama) {
+    switchTab('Chat', document.querySelector('.bottom-nav .nav-item:nth-child(2)'));
+    tutupDetail();
+    bukaThreadChat({ id: sellerId, nama: sellerNama, avatar_url: null, seller_verified: true });
+};
+
+window.bukaThreadChat = async function (lawan) {
+    chatLawanBicara = lawan;
+    document.getElementById('chatListView').style.display = 'none';
+    document.getElementById('chatThreadView').style.display = 'block';
+
+    document.getElementById('chatThreadHeader').innerHTML = `
+        ${lawan.avatar_url ? `<img src="${lawan.avatar_url}">` : `<div class="avatar-fallback">${lawan.nama.charAt(0).toUpperCase()}</div>`}
+        <div style="font-size:13px; font-weight:700;">${lawan.nama} ${lawan.seller_verified ? '<i class="fa-solid fa-circle-check verified-badge"></i>' : ''}</div>
+    `;
+
+    await renderThreadMessages();
+    await supabase.from('pesan_chat').update({ dibaca: true }).eq('dari_id', lawan.id).eq('ke_id', sesiUser.id);
+
+    if (chatRealtimeChannel) supabase.removeChannel(chatRealtimeChannel);
+    chatRealtimeChannel = supabase
+        .channel('chat_thread_' + lawan.id)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pesan_chat' }, (payload) => {
+            const p = payload.new;
+            const cocok = (p.dari_id === lawan.id && p.ke_id === sesiUser.id) || (p.dari_id === sesiUser.id && p.ke_id === lawan.id);
+            if (cocok) renderThreadMessages();
+        })
+        .subscribe();
+};
+
+async function renderThreadMessages() {
+    if (!chatLawanBicara) return;
+    const box = document.getElementById('chatThreadMessages');
+    const { data } = await supabase
+        .from('pesan_chat')
+        .select('*')
+        .or(`and(dari_id.eq.${sesiUser.id},ke_id.eq.${chatLawanBicara.id}),and(dari_id.eq.${chatLawanBicara.id},ke_id.eq.${sesiUser.id})`)
+        .order('created_at', { ascending: true });
+
+    box.innerHTML = (data || []).map(p => `
+        <div class="chat-bubble-row ${p.dari_id === sesiUser.id ? 'me' : ''}">
+            <div class="chat-bubble">${p.pesan}</div>
+        </div>
+    `).join('');
+    box.scrollTop = box.scrollHeight;
+}
+
+window.tutupThreadChat = function () {
+    document.getElementById('chatThreadView').style.display = 'none';
+    document.getElementById('chatListView').style.display = 'block';
+    if (chatRealtimeChannel) { supabase.removeChannel(chatRealtimeChannel); chatRealtimeChannel = null; }
+    chatLawanBicara = null;
+    loadDaftarChat();
+};
+
+document.getElementById('formKirimChat')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!chatLawanBicara) return;
+    const input = document.getElementById('chatThreadInput');
+    const pesan = input.value.trim();
+    if (!pesan) return;
+
+    const { error } = await supabase.from('pesan_chat').insert([{ dari_id: sesiUser.id, ke_id: chatLawanBicara.id, pesan }]);
+    if (error) {
+        Swal.fire({ icon: 'error', title: 'Gagal Mengirim', text: error.message });
+        return;
+    }
+    input.value = '';
+    renderThreadMessages();
+});
+
+// ================= 13. NOTIFIKASI PROMO REALTIME =================
 function dengarkanNotifRealtime() {
     supabase
         .channel('notif_toko_channel')
