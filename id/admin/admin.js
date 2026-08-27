@@ -1,6 +1,6 @@
 import { supabase } from '/config/supabase.js';
 
-const WASENDER_API_KEY = '50021fcdb8bb9825a200cbda9a944ea6bbcf4c5454e7512cf12cff23ddc9dd56'; // Ganti API key kamu (dari app.wasender.dev)
+const WASENDER_API_KEY = 'wsm_wc8H2V1Be9DGkcxeFhERIYbftqp92zZ186cH53IrecQXbRin'; // Ganti API key kamu (dari app.wasender.dev)
 const WASENDER_ENDPOINT = 'https://app.wasender.dev/api/send-message';
 const NOMOR_ADMIN_WA = '6283872851796'; // Ganti nomor WA admin
 
