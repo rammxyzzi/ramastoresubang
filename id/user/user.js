@@ -4,8 +4,8 @@ import { supabase } from '/config/supabase.js';
 const NAMA_TOKO = "Rama Store";
 const TAGLINE_TOKO = "Belanja gampang, proses cepat";
 const NOMOR_ADMIN_WA = "6283872851796"; // Ganti nomor WA admin di sini
-const WASENDER_API_KEY = 'wsm_wc8H2V1Be9DGkcxeFhERIYbftqp92zZ186cH53IrecQXbRin'; // Ganti API key kamu (dari app.wasender.dev)
-const WASENDER_ENDPOINT = 'https://app.wasender.dev/api/send-message';
+//const WASENDER_API_KEY = 'wsm_wc8H2V1Be9DGkcxeFhERIYbftqp92zZ186cH53IrecQXbRin'; // Ganti API key kamu (dari app.wasender.dev)
+//const WASENDER_ENDPOINT = 'https://app.wasender.dev/api/send-message';
 
 // Pembayaran cuma DANA
 const NOMOR_DANA = "6283872851796"; // Ganti nomor DANA tujuan pembayaran
@@ -305,10 +305,10 @@ window.kirimKodeOtp = async function () {
     }
 
     const pesanWA = `*Kode Verifikasi Rama Store*\n\nKode kamu: *${kode}*\n\nJangan berikan kode ini ke siapa pun.`;
-    fetch(WASENDER_ENDPOINT, {
+    fetch('/api/send-wa', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${WASENDER_API_KEY}` },
-        body: JSON.stringify({ to: sesiUser.no_wa, text: pesanWA })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: NOMOR_ADMIN_WA, text: pesanWA })
     }).catch(err => console.error('Wasender Error:', err));
 
     document.getElementById('verifWaStep1').style.display = 'none';
@@ -386,9 +386,9 @@ window.kirimPinLupaPassword = async function () {
     }
 
     const pesanWA = `*Reset Password Rama Store*\n\nPIN kamu: *${kode}*\n\nJangan berikan PIN ini ke siapa pun. Berlaku 10 menit.`;
-    fetch(WASENDER_ENDPOINT, {
+    fetch('/api/send-wa', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${WASENDER_API_KEY}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: noWa, text: pesanWA })
     }).catch(err => console.error('Wasender Error:', err));
 
