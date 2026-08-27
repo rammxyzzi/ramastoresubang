@@ -7,7 +7,7 @@ const NOMOR_ADMIN_WA = '6283872851796'; // Ganti nomor WA admin
 // HARUS SAMA PERSIS dengan yang kamu isi di schema-toko.sql bagian
 // "RAHASIA-ADMIN-GANTI-INI" — ini kunci yang bikin tombol approve/tolak/dsb
 // di panel ini bisa jalan. Jangan sampai file ini kesebar ke publik.
-const ADMIN_RPC_SECRET = 'RAHASIA-ADMIN-GANTI-INI';
+const ADMIN_RPC_SECRET = 'ramaaxyz';
 
 document.addEventListener('DOMContentLoaded', () => {
     cekAdminSession();
