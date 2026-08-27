@@ -9,7 +9,7 @@ const WASENDER_ENDPOINT = 'https://app.wasender.dev/api/send-message';
 
 // Pembayaran cuma DANA
 const NOMOR_DANA = "6283872851796"; // Ganti nomor DANA tujuan pembayaran
-const NAMA_PEMILIK_DANA = "Nama Pemilik DANA"; // Ganti nama pemilik akun DANA
+const NAMA_PEMILIK_DANA = "Rama A'nur Maulana"; // Ganti nama pemilik akun DANA
 
 let currentLang = localStorage.getItem('appLang') || 'id';
 let sesiUser = JSON.parse(localStorage.getItem('sesiUser') || 'null');
