@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rama Store - Toko Online</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="id/user/user.css">
+</head>
+<body>
+
+    <!-- ================= AUTH SCREEN (LOGIN / REGISTER) ================= -->
+    <div id="authScreen" class="app-container login-wrapper">
+        <div class="bg-grid"></div>
+        <div class="login-card">
+            <img src="assets/logo-rama-store.jpg" alt="Rama Store" class="brand-logo-anim">
+            <div class="brand-header">
+                <p>Masuk atau daftar untuk mulai belanja</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab-btn active" onclick="switchAuthTab('login', this)">Masuk</div>
+                <div class="auth-tab-btn" onclick="switchAuthTab('register', this)">Daftar</div>
+            </div>
+
+            <!-- FORM LOGIN -->
+            <form id="formLogin" class="auth-form active">
+                <div class="input-group">
+                    <label>Nomor WhatsApp</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone input-icon"></i>
+                        <input type="text" id="loginWa" placeholder="Contoh: 628123456789" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">
+                    <span>Masuk</span>
+                    <div class="spinner" id="loginSpinner"></div>
+                </button>
+                <div style="text-align:center; margin-top: 12px;">
+                    <span style="font-size:11.5px; color:#94a3b8; cursor:pointer; text-decoration:underline;" onclick="bukaLupaPassword()">Lupa password?</span>
+                </div>
+            </form>
+
+            <!-- FORM REGISTER -->
+            <form id="formRegister" class="auth-form">
+                <div class="input-group">
+                    <label>Nama Lengkap</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user input-icon"></i>
+                        <input type="text" id="regNama" placeholder="Nama kamu" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Nomor WhatsApp</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone input-icon"></i>
+                        <input type="text" id="regWa" placeholder="Contoh: 628123456789" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="regPassword" placeholder="Buat password" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login">
+                    <span>Daftar</span>
+                    <div class="spinner" id="registerSpinner"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP (setelah login) ================= -->
+    <div id="mainApp" class="app-container" style="display:none;">
+
+        <!-- ================= TOP HEADER ================= -->
+        <div class="header">
+            <div class="store-brand">
+                <div class="store-logo"><i class="fa-solid fa-bag-shopping"></i></div>
+                <div>
+                    <h1 id="txtStoreName">Rama Store</h1>
+                    <p id="txtStoreTagline">Belanja gampang, proses cepat</p>
+                </div>
+            </div>
+            <button class="lang-btn" onclick="toggleLanguage()">
+                <i class="fa-solid fa-globe"></i> <span id="langText">ID / EN</span>
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: BERANDA / KATALOG ================= -->
+        <div id="tabHome" class="tab-content active">
+            <div class="stats-row">
+                <div class="stat-box"><div class="val" id="statAkunTersedia">0</div><div class="lbl">Akun Tersedia</div></div>
+                <div class="stat-box"><div class="val" id="statAkunTerjual">0</div><div class="lbl">Akun Terjual</div></div>
+                <div class="stat-box"><div class="val" id="statTotalUser">0</div><div class="lbl">Total User</div></div>
+            </div>
+
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchProduk" placeholder="Cari produk..." oninput="renderProduk()">
+            </div>
+
+            <h3 style="font-size: 14px; margin-bottom: 10px; color: #ef4444;"><i class="fa-solid fa-gamepad"></i> Kategori Game</h3>
+            <div id="gameGrid" class="game-grid"></div>
+
+            <div class="category-scroll" id="categoryScroll">
+                <div class="cat-chip active" data-cat="Semua" onclick="pilihKategori('Semua', this)">Semua</div>
+            </div>
+
+            <h3 id="txtPromoTitle" style="font-size: 14px; margin-bottom: 10px; color: #ef4444;"><i class="fa-solid fa-bullhorn"></i> Info & Promo</h3>
+            <div id="infoTokoList" style="margin-bottom: 20px;">
+                <p style="font-size: 12px; color: #94a3b8;">Memuat info...</p>
+            </div>
+
+            <h3 id="txtCatalogTitle" style="font-size: 14px; margin-bottom: 10px; color: #ef4444;"><i class="fa-solid fa-shop"></i> Produk Tersedia</h3>
+            <div id="productGrid" class="product-grid">
+                <p style="grid-column: 1/-1; font-size: 12px; color: #94a3b8; text-align: center;">Memuat produk...</p>
+            </div>
+        </div>
+
+        <!-- ================= TAB CHAT (DM antar user + akses CS) ================= -->
+        <div id="tabChat" class="tab-content">
+            <h3 style="font-size: 15px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-comments"></i> Chat</h3>
+
+            <div id="chatListView">
+                <div class="search-bar" style="margin-bottom: 12px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="cariUserChat" placeholder="Cari nama user buat mulai chat..." oninput="cariUserUntukChat()">
+                </div>
+                <div id="hasilCariUser"></div>
+
+                <div class="chat-list-item" onclick="switchTab('Cs')">
+                    <div class="avatar-fallback"><i class="fa-solid fa-headset"></i></div>
+                    <div class="chat-list-info">
+                        <div class="nm">Customer Service</div>
+                        <div class="last-msg">FAQ otomatis & chat WA admin</div>
+                    </div>
+                </div>
+
+                <div id="daftarChatList" style="margin-top: 6px;">
+                    <p style="font-size: 12px; color: #94a3b8; text-align:center; padding: 12px;">Memuat percakapan...</p>
+                </div>
+            </div>
+
+            <div id="chatThreadView" style="display:none;">
+                <button onclick="tutupThreadChat()" style="background:transparent; border:none; color:#ef4444; font-size:12px; margin-bottom:10px; cursor:pointer;"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                <div class="chat-thread-header" id="chatThreadHeader"></div>
+                <div id="chatThreadMessages" class="chat-box" style="max-height: 50vh;"></div>
+                <form id="formKirimChat" style="display: flex; gap: 8px;">
+                    <input type="text" id="chatThreadInput" placeholder="Tulis pesan..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; outline: none; font-size: 13px;" required>
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 10px 16px;"><i class="fa-solid fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: CUSTOMER SERVICE ================= -->
+        <div id="tabCs" class="tab-content">
+            <h3 style="font-size: 15px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-headset"></i> Customer Service</h3>
+            <div class="card" style="padding: 15px;">
+                <div id="chatContainer" class="chat-box">
+                    <div class="chat-msg bot" id="txtCsWelcome">Halo 👋 Ada yang bisa dibantu seputar produk, harga, atau cara belanja?</div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span class="faq-chip" onclick="tanyaCepat('Bagaimana cara belanja di sini?')">Cara belanja</span>
+                    <span class="faq-chip" onclick="tanyaCepat('Metode pembayaran apa saja?')">Pembayaran</span>
+                    <span class="faq-chip" onclick="tanyaCepat('Bagaimana cara jadi seller?')">Jadi Seller</span>
+                </div>
+                <form id="formCsChat" style="display: flex; gap: 8px;">
+                    <input type="text" id="csQuery" placeholder="Tulis pertanyaan..." style="flex: 1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; outline: none; font-size: 13px;" required>
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 10px 16px;"><i class="fa-solid fa-paper-plane"></i></button>
+                </form>
+                <a id="linkWaCs" href="#" target="_blank" class="btn-outline" style="display: block; text-align: center; text-decoration: none; margin-top: 12px;">
+                    <i class="fa-brands fa-whatsapp"></i> Chat Langsung ke Admin
+                </a>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: KERANJANG ================= -->
+        <div id="tabCart" class="tab-content">
+            <h3 style="font-size: 15px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-cart-shopping"></i> Keranjang Belanja</h3>
+            <div class="card" id="cartCard">
+                <div id="cartList"></div>
+                <div id="cartFooter" style="display:none;">
+                    <div class="cart-total-row"><span>Total</span><span id="cartTotal" style="color:#4ade80;">Rp 0</span></div>
+                    <button class="btn-primary" onclick="bukaCheckout()"><i class="fa-solid fa-bolt"></i> Checkout Sekarang</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: GALERI ================= -->
+        <div id="tabGaleri" class="tab-content">
+            <h3 style="font-size: 15px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-images"></i> Testimoni & Galeri</h3>
+            <div id="galeriGrid" class="memory-grid">
+                <p style="grid-column: 1/-1; font-size: 12px; color: #94a3b8;">Memuat galeri...</p>
+            </div>
+        </div>
+
+        <!-- ================= TAB 5: AKUN ================= -->
+        <div id="tabAkun" class="tab-content">
+            <div class="card">
+                <div class="profile-card">
+                    <div class="avatar-upload-wrap">
+                        <div class="profile-avatar" id="avatarInitial" style="width:66px; height:66px; font-size:22px;">?</div>
+                        <img id="avatarImg" style="display:none;" alt="Avatar">
+                        <label class="avatar-edit-btn" for="avatarFileInput"><i class="fa-solid fa-camera"></i></label>
+                        <input type="file" id="avatarFileInput" accept="image/*" style="display:none;">
+                    </div>
+                    <div class="profile-info">
+                        <div class="nm" id="profileNama">-- <i class="fa-solid fa-circle-check verified-badge" id="verifiedIcon" style="display:none;"></i></div>
+                        <div class="wa" id="profileWa">-</div>
+                        <span class="role-badge buyer" id="profileRoleBadge">Buyer</span>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 14px;">
+                    <label>Bio</label>
+                    <textarea id="profileBio" placeholder="Ceritakan sedikit tentang kamu / toko kamu..." rows="2"></textarea>
+                </div>
+                <button class="btn-outline" style="margin-bottom: 8px;" onclick="simpanBio()">Simpan Bio</button>
+                <button class="btn-danger" style="width:100%; padding: 12px;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+            </div>
+
+            <!-- BANNER VERIFIKASI WA -->
+            <div class="card" id="cardVerifWa" style="display:none; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.06);">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="font-size:12px;"><i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> Kamu belum verifikasi nomor WA. Verifikasi sekarang yuk!</div>
+                    <button class="btn-primary" style="width:auto; padding:8px 14px; font-size:11px; flex-shrink:0;" onclick="bukaVerifWa()">Verify</button>
+                </div>
+            </div>
+
+            <!-- AJUKAN JADI SELLER -->
+            <div class="card" id="cardAjukanSeller" style="display:none;">
+                <h3 style="font-size: 14px; margin-bottom: 8px; color: #ef4444;"><i class="fa-solid fa-store"></i> Mau Jualan di Sini?</h3>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Ajukan diri jadi seller. Admin akan meninjau & menyetujui pengajuan kamu.</p>
+                <button class="btn-primary" onclick="bukaFormAjukanSeller()">Ajukan Jadi Seller</button>
+            </div>
+            <div class="card" id="cardPendingSeller" style="display:none;">
+                <p style="font-size: 12px; color: #f59e0b; text-align:center;"><i class="fa-solid fa-hourglass-half"></i> Pengajuan seller kamu sedang ditinjau admin.</p>
+            </div>
+
+            <!-- DASHBOARD SELLER -->
+            <div id="sellerDashboard" style="display:none;">
+                <div class="seller-tabs">
+                    <div class="seller-tab-btn active" onclick="switchSellerTab('ProdukSaya', this)">Produk Saya</div>
+                    <div class="seller-tab-btn" onclick="switchSellerTab('PesananSeller', this)">Pesanan Masuk</div>
+                </div>
+
+                <div id="sellerProdukSaya" class="subtab-content active">
+                    <div class="card">
+                        <h3 style="font-size: 14px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-plus"></i> Tambah Produk</h3>
+                        <form id="formTambahProduk">
+                            <div class="form-group"><label>Nama Produk</label><input type="text" id="pNama" required></div>
+                            <div class="form-group"><label>Kategori</label><input type="text" id="pKategori" required></div>
+                            <div class="form-group"><label>Harga (Rp)</label><input type="number" id="pHarga" required></div>
+                            <div class="form-group"><label>Stok</label><input type="number" id="pStok" required></div>
+                            <div class="form-group"><label>URL Gambar</label><input type="url" id="pGambar"></div>
+                            <div class="form-group"><label>Deskripsi</label><textarea id="pDeskripsi"></textarea></div>
+                            <button type="submit" class="btn-primary">+ Simpan Produk</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h3 style="font-size: 14px; margin-bottom: 12px; color: #ef4444;">Produk Saya</h3>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>Produk</th><th>Harga</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead>
+                                <tbody id="listProdukSayaTable"><tr><td colspan="5" style="text-align:center; color:#94a3b8;">Memuat...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sellerPesananSeller" class="subtab-content">
+                    <div class="card">
+                        <h3 style="font-size: 14px; margin-bottom: 12px; color: #ef4444;">Pesanan Masuk ke Toko Saya</h3>
+                        <div class="table-responsive">
+                            <table>
+                                <thead><tr><th>Waktu</th><th>Pembeli</th><th>Item</th><th>Total</th><th>Status</th></tr></thead>
+                                <tbody id="listPesananSellerTable"><tr><td colspan="5" style="text-align:center; color:#94a3b8;">Memuat...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESANAN SAYA (SEBAGAI PEMBELI) -->
+            <div class="card">
+                <h3 style="font-size: 14px; margin-bottom: 12px; color: #ef4444;"><i class="fa-solid fa-receipt"></i> Pesanan Saya</h3>
+                <div id="pesananSayaList">
+                    <p style="font-size: 12px; color: #94a3b8;">Memuat pesanan...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FLOATING BOTTOM NAVIGATION BAR -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('Home', this)"><i class="fa-solid fa-house"></i><span>Beranda</span></div>
+            <div class="nav-item" onclick="switchTab('Chat', this)"><i class="fa-solid fa-comments"></i><span>Chat</span></div>
+            <div class="nav-item center-btn" onclick="switchTab('Cart', this)">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="cart-badge" id="cartBadge" style="display:none;">0</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('Galeri', this)"><i class="fa-solid fa-images"></i><span>Galeri</span></div>
+            <div class="nav-item" onclick="switchTab('Akun', this)"><i class="fa-solid fa-user"></i><span>Akun</span></div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL DETAIL PRODUK (rating + QA) ================= -->
+    <div id="detailModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 440px; width: 92%;">
+            <div id="detailBody"></div>
+            <button type="button" onclick="tutupDetail()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- ================= MODAL CHECKOUT ================= -->
+    <div id="checkoutModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 420px; width: 90%;">
+            <div style="background: rgba(239, 68, 68, 0.1); width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto;">
+                <i class="fa-solid fa-receipt" style="font-size: 26px; color: #ef4444;"></i>
+            </div>
+            <h3 style="text-align: center; margin-bottom: 6px;">Konfirmasi Pesanan</h3>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 10px;">Pesanan akan dikirim ke masing-masing seller. Admin/seller akan hubungi WA kamu.</p>
+            <p style="font-size: 11px; color: #ef4444; text-align: center; margin-bottom: 14px; background: rgba(239, 68, 68,0.08); border-radius: 8px; padding: 8px;"><i class="fa-brands fa-cc-visa"></i> Pembayaran hanya menerima <b>DANA</b></p>
+
+            <div id="checkoutSummary" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 16px; font-size: 12px; color: #cbd5e1;"></div>
+
+            <form id="formCheckout">
+                <div class="form-group">
+                    <label>Catatan (Opsional)</label>
+                    <textarea id="ckCatatan" placeholder="Contoh: minta warna/varian tertentu"></textarea>
+                </div>
+                <button type="submit" class="btn-primary" id="btnSubmitCheckout"><i class="fa-solid fa-paper-plane"></i> Kirim Pesanan</button>
+                <button type="button" onclick="tutupCheckout()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL RATING ================= -->
+    <div id="ratingModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 380px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 14px;">Beri Rating Seller</h3>
+            <div class="rating-input" id="ratingStarsInput">
+                <i class="fa-solid fa-star" data-val="1"></i>
+                <i class="fa-solid fa-star" data-val="2"></i>
+                <i class="fa-solid fa-star" data-val="3"></i>
+                <i class="fa-solid fa-star" data-val="4"></i>
+                <i class="fa-solid fa-star" data-val="5"></i>
+            </div>
+            <form id="formRating">
+                <div class="form-group"><label>Komentar (Opsional)</label><textarea id="ratingKomentar" placeholder="Gimana pengalaman belanjanya?"></textarea></div>
+                <button type="submit" class="btn-primary">Kirim Rating</button>
+                <button type="button" onclick="tutupRating()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL PENGAJUAN SELLER ================= -->
+    <div id="ajukanSellerModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 400px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 6px;"><i class="fa-solid fa-store"></i> Ajukan Jadi Seller</h3>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 16px;">Isi data ini biar admin bisa tinjau pengajuan kamu.</p>
+            <form id="formAjukanSeller">
+                <div class="form-group"><label>Nama Lengkap</label><input type="text" id="asNama" required></div>
+                <div class="form-group"><label>Asal</label><input type="text" id="asAsal" placeholder="Contoh: Bandung, Jawa Barat" required></div>
+                <div class="form-group"><label>Umur</label><input type="number" id="asUmur" placeholder="Contoh: 20" required></div>
+                <div class="form-group"><label>Nomor DANA (buat nerima pembayaran)</label><input type="text" id="asNomorDana" placeholder="Contoh: 628123456789" required></div>
+                <button type="submit" class="btn-primary">Kirim Pengajuan</button>
+                <button type="button" onclick="tutupFormAjukanSeller()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL VERIFIKASI WA ================= -->
+    <div id="verifWaModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 380px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 6px;"><i class="fa-brands fa-whatsapp"></i> Verifikasi Nomor WA</h3>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 16px;">Kami akan kirim kode 6 digit ke WhatsApp <b id="verifWaNomor">-</b></p>
+
+            <div id="verifWaStep1">
+                <button class="btn-primary" onclick="kirimKodeOtp()" id="btnKirimOtp">Kirim Kode Sekarang</button>
+            </div>
+
+            <div id="verifWaStep2" style="display:none;">
+                <div class="form-group"><label>Masukkan Kode</label><input type="text" id="inputKodeOtp" placeholder="Contoh: 123456" maxlength="6"></div>
+                <button class="btn-primary" onclick="cekKodeOtp()">Verifikasi</button>
+                <button class="btn-outline" style="margin-top:10px;" onclick="kirimKodeOtp()">Kirim Ulang Kode</button>
+            </div>
+
+            <button type="button" onclick="tutupVerifWa()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- ================= MODAL EDIT PRODUK ================= -->
+    <div id="editProdukModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 400px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 16px;"><i class="fa-solid fa-pen"></i> Edit Produk</h3>
+            <form id="formEditProduk">
+                <div class="form-group"><label>Nama Produk</label><input type="text" id="epNama" required></div>
+                <div class="form-group"><label>Kategori</label><input type="text" id="epKategori" required></div>
+                <div class="form-group"><label>Harga (Rp)</label><input type="number" id="epHarga" required></div>
+                <div class="form-group"><label>Stok</label><input type="number" id="epStok" required></div>
+                <div class="form-group"><label>URL Gambar</label><input type="url" id="epGambar"></div>
+                <div class="form-group"><label>Deskripsi</label><textarea id="epDeskripsi"></textarea></div>
+                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+                <button type="button" onclick="tutupEditProduk()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL LUPA PASSWORD ================= -->
+    <div id="lupaPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 380px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 6px;"><i class="fa-solid fa-key"></i> Lupa Password</h3>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 16px;">Masukkan nomor WA akun kamu, kami kirim PIN buat reset password.</p>
+
+            <div id="lupaStep1">
+                <div class="form-group"><label>Nomor WhatsApp (saat daftar)</label><input type="text" id="lupaNoWa" placeholder="Contoh: 628123456789"></div>
+                <div class="form-group"><label>Nama Lengkap (saat daftar)</label><input type="text" id="lupaNama" placeholder="Sesuai nama pas daftar"></div>
+                <button class="btn-primary" onclick="kirimPinLupaPassword()" id="btnKirimPinLupa">Kirim PIN</button>
+            </div>
+
+            <div id="lupaStep2" style="display:none;">
+                <div class="form-group"><label>Kode PIN dari WA</label><input type="text" id="lupaKodePin" placeholder="Contoh: 123456" maxlength="6"></div>
+                <div class="form-group"><label>Password Baru</label><input type="password" id="lupaPasswordBaru" placeholder="Password baru"></div>
+                <button class="btn-primary" onclick="submitResetPassword()">Ganti Password</button>
+                <button class="btn-outline" style="margin-top:10px;" onclick="kirimPinLupaPassword()">Kirim Ulang PIN</button>
+            </div>
+
+            <button type="button" onclick="tutupLupaPassword()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Tutup</button>
+        </div>
+    </div>
+
+    <script type="module" src="user.js"></script>
+</body>
+</html>
