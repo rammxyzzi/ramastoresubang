@@ -224,10 +224,15 @@
                     </div>
                 </div>
                 <div class="form-group" style="margin-top: 14px;">
+                    <label>Nama</label>
+                    <input type="text" id="profileNamaInput" placeholder="Nama kamu">
+                </div>
+                <div class="form-group">
                     <label>Bio</label>
                     <textarea id="profileBio" placeholder="Ceritakan sedikit tentang kamu / toko kamu..." rows="2"></textarea>
                 </div>
-                <button class="btn-outline" style="margin-bottom: 8px;" onclick="simpanBio()">Simpan Bio</button>
+                <button class="btn-outline" style="margin-bottom: 8px;" onclick="simpanProfil()">Simpan Profil</button>
+                <button class="btn-outline" style="margin-bottom: 8px;" onclick="bukaGantiPassword()"><i class="fa-solid fa-key"></i> Ubah Password</button>
                 <button class="btn-danger" style="width:100%; padding: 12px;" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
             </div>
 
@@ -441,6 +446,27 @@
         </div>
     </div>
 
-    <script type="module" src="id/user/user.js"></script>
+    <!-- ================= MODAL UBAH PASSWORD (dari dalam profil) ================= -->
+    <div id="gantiPasswordModal" class="modal-overlay" style="display: none;">
+        <div class="card modal-content" style="max-width: 380px; width: 90%;">
+            <h3 style="text-align: center; margin-bottom: 6px;"><i class="fa-solid fa-key"></i> Ubah Password</h3>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 16px;">Kami kirim kode 6 digit ke WhatsApp <b id="gantiPwNomor">-</b> buat konfirmasi</p>
+
+            <div id="gantiPwStep1">
+                <button class="btn-primary" onclick="kirimKodeGantiPassword()" id="btnKirimKodeGantiPw">Kirim Kode Sekarang</button>
+            </div>
+
+            <div id="gantiPwStep2" style="display:none;">
+                <div class="form-group"><label>Kode dari WA</label><input type="text" id="gantiPwKode" placeholder="Contoh: 123456" maxlength="6"></div>
+                <div class="form-group"><label>Password Baru</label><input type="password" id="gantiPwBaru" placeholder="Password baru"></div>
+                <button class="btn-primary" onclick="submitGantiPassword()">Simpan Password Baru</button>
+                <button class="btn-outline" style="margin-top:10px;" onclick="kirimKodeGantiPassword()">Kirim Ulang Kode</button>
+            </div>
+
+            <button type="button" onclick="tutupGantiPassword()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 13px;">Tutup</button>
+        </div>
+    </div>
+
+    <script type="module" src="user.js"></script>
 </body>
 </html>
