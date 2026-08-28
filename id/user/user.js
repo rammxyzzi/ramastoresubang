@@ -4,12 +4,28 @@ import { supabase } from '/config/supabase.js';
 const NAMA_TOKO = "Rama Store";
 const TAGLINE_TOKO = "Belanja gampang, proses cepat";
 const NOMOR_ADMIN_WA = "6283872851796"; // Ganti nomor WA admin di sini
-//const WASENDER_API_KEY = 'wsm_wc8H2V1Be9DGkcxeFhERIYbftqp92zZ186cH53IrecQXbRin'; // Ganti API key kamu (dari app.wasender.dev)
-//const WASENDER_ENDPOINT = 'https://app.wasender.dev/api/send-message';
 
 // Pembayaran cuma DANA
 const NOMOR_DANA = "6283872851796"; // Ganti nomor DANA tujuan pembayaran
-const NAMA_PEMILIK_DANA = "Rama A'nur Maulana"; // Ganti nama pemilik akun DANA
+const NAMA_PEMILIK_DANA = "Nama Pemilik DANA"; // Ganti nama pemilik akun DANA
+
+// Kirim WA lewat perantara /api/kirim-wa (bukan langsung ke Wasender),
+// karena Wasender ga bisa dipanggil langsung dari browser (CORS).
+async function kirimNotifikasiWA(to, text) {
+    try {
+        const resp = await fetch('/api/kirim-wa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to, text })
+        });
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            console.error('Gagal kirim WA:', err);
+        }
+    } catch (err) {
+        console.error('Gagal kirim WA:', err);
+    }
+}
 
 let currentLang = localStorage.getItem('appLang') || 'id';
 let sesiUser = JSON.parse(localStorage.getItem('sesiUser') || 'null');
@@ -165,6 +181,7 @@ function renderProfile() {
     }
     document.getElementById('profileNama').childNodes[0].nodeValue = sesiUser.nama + ' ';
     document.getElementById('profileWa').innerText = sesiUser.no_wa;
+    document.getElementById('profileNamaInput').value = sesiUser.nama || '';
     document.getElementById('profileBio').value = sesiUser.bio || '';
     document.getElementById('verifiedIcon').style.display = sesiUser.seller_verified ? 'inline-block' : 'none';
 
@@ -268,16 +285,77 @@ document.getElementById('avatarFileInput')?.addEventListener('change', async (e)
     Swal.fire({ icon: 'success', title: 'Foto Profil Diperbarui', timer: 1000, showConfirmButton: false });
 });
 
-window.simpanBio = async function () {
+window.simpanProfil = async function () {
+    const nama = document.getElementById('profileNamaInput').value.trim();
     const bio = document.getElementById('profileBio').value.trim();
-    const { error } = await supabase.from('users').update({ bio }).eq('id', sesiUser.id);
+    if (!nama) { Swal.fire({ icon: 'warning', title: 'Nama Ga Boleh Kosong' }); return; }
+
+    const { error } = await supabase.from('users').update({ nama, bio }).eq('id', sesiUser.id);
     if (error) {
         Swal.fire({ icon: 'error', title: 'Gagal', text: error.message });
         return;
     }
+    sesiUser.nama = nama;
     sesiUser.bio = bio;
     localStorage.setItem('sesiUser', JSON.stringify(sesiUser));
-    Swal.fire({ icon: 'success', title: 'Bio Disimpan', timer: 900, showConfirmButton: false });
+    Swal.fire({ icon: 'success', title: 'Profil Disimpan', timer: 900, showConfirmButton: false });
+    renderProfile();
+};
+
+// ================= UBAH PASSWORD (dari dalam profil, auto kirim OTP ke WA sendiri) =================
+window.bukaGantiPassword = function () {
+    document.getElementById('gantiPwNomor').innerText = sesiUser.no_wa;
+    document.getElementById('gantiPwStep1').style.display = 'block';
+    document.getElementById('gantiPwStep2').style.display = 'none';
+    document.getElementById('gantiPwKode').value = '';
+    document.getElementById('gantiPwBaru').value = '';
+    document.getElementById('gantiPasswordModal').style.display = 'flex';
+};
+
+window.tutupGantiPassword = function () { document.getElementById('gantiPasswordModal').style.display = 'none'; };
+
+window.kirimKodeGantiPassword = async function () {
+    const btn = document.getElementById('btnKirimKodeGantiPw');
+    if (btn) { btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...`; }
+
+    const kode = String(Math.floor(100000 + Math.random() * 900000));
+    const { error } = await supabase.from('otp_verifikasi').insert([{ user_id: sesiUser.id, kode }]);
+
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Kirim Kode Sekarang'; }
+
+    if (error) {
+        Swal.fire({ icon: 'error', title: 'Gagal Kirim Kode', text: error.message });
+        return;
+    }
+
+    const pesanWA = `*Ubah Password Rama Store*\n\nKode kamu: *${kode}*\n\nJangan berikan kode ini ke siapa pun. Berlaku 10 menit.`;
+    kirimNotifikasiWA(sesiUser.no_wa, pesanWA);
+
+    document.getElementById('gantiPwStep1').style.display = 'none';
+    document.getElementById('gantiPwStep2').style.display = 'block';
+    Swal.fire({ icon: 'success', title: 'Kode Terkirim', text: 'Cek WhatsApp kamu ya.', timer: 1200, showConfirmButton: false });
+};
+
+window.submitGantiPassword = async function () {
+    const kode = document.getElementById('gantiPwKode').value.trim();
+    const passwordBaru = document.getElementById('gantiPwBaru').value;
+
+    if (!kode || !passwordBaru) {
+        Swal.fire({ icon: 'warning', title: 'Lengkapi Dulu', text: 'Isi kode dan password baru.' });
+        return;
+    }
+
+    const { data: berhasil, error } = await supabase.rpc('reset_password_dengan_pin', {
+        p_no_wa: sesiUser.no_wa, p_kode: kode, p_password_baru: passwordBaru
+    });
+
+    if (error || !berhasil) {
+        Swal.fire({ icon: 'error', title: 'Kode Salah / Kedaluwarsa', text: 'Coba cek lagi kodenya, atau kirim ulang.' });
+        return;
+    }
+
+    document.getElementById('gantiPasswordModal').style.display = 'none';
+    Swal.fire({ icon: 'success', title: 'Password Berhasil Diganti', timer: 1200, showConfirmButton: false });
 };
 
 // ================= VERIFIKASI NOMOR WA (OTP via Wasender) =================
@@ -305,11 +383,7 @@ window.kirimKodeOtp = async function () {
     }
 
     const pesanWA = `*Kode Verifikasi Rama Store*\n\nKode kamu: *${kode}*\n\nJangan berikan kode ini ke siapa pun.`;
-    fetch('/api/send-wa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: NOMOR_ADMIN_WA, text: pesanWA })
-    }).catch(err => console.error('Wasender Error:', err));
+    kirimNotifikasiWA(sesiUser.no_wa, pesanWA);
 
     document.getElementById('verifWaStep1').style.display = 'none';
     document.getElementById('verifWaStep2').style.display = 'block';
@@ -386,11 +460,7 @@ window.kirimPinLupaPassword = async function () {
     }
 
     const pesanWA = `*Reset Password Rama Store*\n\nPIN kamu: *${kode}*\n\nJangan berikan PIN ini ke siapa pun. Berlaku 10 menit.`;
-    fetch('/api/send-wa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: noWa, text: pesanWA })
-    }).catch(err => console.error('Wasender Error:', err));
+    kirimNotifikasiWA(noWa, pesanWA);
 
     document.getElementById('lupaStep1').style.display = 'none';
     document.getElementById('lupaStep2').style.display = 'block';
@@ -821,11 +891,7 @@ document.getElementById('formCheckout')?.addEventListener('submit', async (e) =>
         (catatan ? `📝 Catatan: ${catatan}\n\n` : '\n') +
         `_Segera hubungi customer untuk konfirmasi pembayaran DANA & pengiriman akun._`;
 
-    fetch(WASENDER_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${WASENDER_API_KEY}` },
-        body: JSON.stringify({ to: NOMOR_ADMIN_WA, text: pesanWA })
-    }).catch(err => console.error('Wasender Error:', err));
+    kirimNotifikasiWA(NOMOR_ADMIN_WA, pesanWA);
 
     if (checkoutMode === 'cart') { cart = []; simpanCart(); }
 
