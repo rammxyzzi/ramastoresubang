@@ -13,7 +13,7 @@ const NAMA_PEMILIK_DANA = "Nama Pemilik DANA"; // Ganti nama pemilik akun DANA
 // karena Wasender ga bisa dipanggil langsung dari browser (CORS).
 async function kirimNotifikasiWA(to, text) {
     try {
-        const resp = await fetch('/api/kirim-wa', {
+        const resp = await fetch('api/kirim-wa', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to, text })
