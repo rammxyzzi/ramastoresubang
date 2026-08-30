@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/kirim-wa.js": {},
+    "api/webhook-fonnte.js": {}
+  }
+}
