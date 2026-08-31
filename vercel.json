@@ -1,8 +1,4 @@
 {
-  "functions": {
-    "api/kirim-wa.js": {},
-    "api/webhook-fonnte.js": {}
-  },
   "rewrites": [
     { "source": "/", "destination": "/user.html" },
     { "source": "/login", "destination": "/user.html" },
